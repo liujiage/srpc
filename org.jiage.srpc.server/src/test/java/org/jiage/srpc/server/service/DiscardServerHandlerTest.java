@@ -9,6 +9,7 @@ public class DiscardServerHandlerTest  extends ChannelInboundHandlerAdapter { //
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) { // (2)
         // Discard the received data silently.
+        //System.out.println("recived data from client msg: "+msg.toString());
         ((ByteBuf) msg).release(); // (3)
     }
 

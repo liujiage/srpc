@@ -11,3 +11,7 @@ Maven，GitHub，IDEA
 Model
 Main srpc
 Subs org.jiage.srpc.api,org.jiage.srpc.server
+
+
+Reference
+https://netty.io/wiki/user-guide-for-4.x.html

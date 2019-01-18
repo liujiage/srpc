@@ -1,4 +1,4 @@
-package org.jiage.srpc.server.service;
+package org.jiage.srpc.server.netty;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;

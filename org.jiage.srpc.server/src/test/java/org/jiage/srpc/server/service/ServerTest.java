@@ -1,19 +1,15 @@
 package org.jiage.srpc.server.service;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
-public class DiscardServerTest {
+public class ServerTest {
 
     private int port;
-
-    public DiscardServerTest(int port) {
+    public ServerTest(int port) {
         this.port = port;
     }
 
@@ -27,7 +23,7 @@ public class DiscardServerTest {
                     .childHandler(new ChannelInitializer<SocketChannel>() { // (4)
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new DiscardServerHandlerTest());
+                            ch.pipeline().addLast(new TimeEncoder(),new TimeServerHandlerTest());
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)          // (5)
@@ -52,6 +48,6 @@ public class DiscardServerTest {
             port = Integer.parseInt(args[0]);
         }
 
-        new DiscardServerTest(port).run();
+        new ServerTest(port).run();
     }
 }

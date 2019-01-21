@@ -10,7 +10,7 @@ public class ProtocolEncoder extends MessageToByteEncoder<ProtocolVO> {
     protected void encode(ChannelHandlerContext ctx, ProtocolVO msg, ByteBuf out) {
         System.out.println("encode...");
         out.writeInt(msg.getBufferStart());
-        out.writeInt(msg.getSize());
+        out.writeInt(msg.getMessage().length);
         out.writeBytes(msg.getMessage());
     }
 }

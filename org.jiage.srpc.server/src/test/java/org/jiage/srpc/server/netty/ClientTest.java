@@ -12,7 +12,9 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 public class ClientTest {
 
     public static void main(String[] args) throws Exception {
-       call("localhost","8080");
+        for(int i=0; i<1000; i++) {
+            call("localhost", "8080");
+        }
     }
 
     private static void call(String... args) throws Exception{
@@ -28,7 +30,9 @@ public class ClientTest {
             b.handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel ch) throws Exception {
-                    ch.pipeline().addLast(new TimeDecoder(),new TimeClientHandlerTest());
+                    ch.pipeline().addLast(new ProtocolEncoder());
+                    ch.pipeline().addLast(new ProtocolDecoder());
+                    ch.pipeline().addLast(new ProtocolClientHandlerTest());
                 }
             });
 

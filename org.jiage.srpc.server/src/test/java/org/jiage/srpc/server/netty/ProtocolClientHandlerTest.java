@@ -17,10 +17,9 @@ public class ProtocolClientHandlerTest extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        System.out.println("Client received message from server ");
         //2.Client received message from server
         ProtocolVO m = (ProtocolVO) msg;
-        System.out.println(m);
+        System.out.println("Client received message from server "+new String(m.getMessage()));
         ctx.close();
     }
 

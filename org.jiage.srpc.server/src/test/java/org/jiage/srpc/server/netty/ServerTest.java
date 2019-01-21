@@ -23,7 +23,9 @@ public class ServerTest {
                     .childHandler(new ChannelInitializer<SocketChannel>() { // (4)
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new ProtocolEncoder(),new ProtocolServerHandlerTest());
+                            ch.pipeline().addLast(new ProtocolEncoder());
+                            ch.pipeline().addLast(new ProtocolDecoder());
+                            ch.pipeline().addLast(new ProtocolServerHandlerTest());
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)          // (5)

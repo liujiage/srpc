@@ -5,21 +5,24 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.jiage.srpc.server.constant.TransferConstant;
+import org.jiage.srpc.server.vo.TransferVO;
 
 public class ServerTest {
 
-    private int port;
-    public ServerTest(int port) {
-        this.port = port;
+    public static void main(String[] args) throws Exception {
+
+        new ServerTest().transfer(new TransferVO(TransferConstant.PORT));
     }
 
-    public void run() throws Exception {
-        EventLoopGroup bossGroup = new NioEventLoopGroup(); // (1)
+    public void transfer(TransferVO transferVO) throws Exception {
+        final int port = transferVO.getPort();
+        EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
-            ServerBootstrap b = new ServerBootstrap(); // (2)
+            ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class) // (3)
+                    .channel(NioServerSocketChannel.class)
                     .childHandler(new ChannelInitializer<SocketChannel>() { // (4)
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
@@ -28,8 +31,8 @@ public class ServerTest {
                             ch.pipeline().addLast(new ProtocolServerHandlerTest());
                         }
                     })
-                    .option(ChannelOption.SO_BACKLOG, 128)          // (5)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true); // (6)
+                    .option(ChannelOption.SO_BACKLOG, 128)
+                    .childOption(ChannelOption.SO_KEEPALIVE, true);
 
             // Bind and start to accept incoming connections.
             ChannelFuture f = b.bind(port).sync(); // (7)
@@ -44,12 +47,5 @@ public class ServerTest {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        int port = 8080;
-        if (args.length > 0) {
-            port = Integer.parseInt(args[0]);
-        }
 
-        new ServerTest(port).run();
-    }
 }

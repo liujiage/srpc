@@ -5,6 +5,8 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import org.jiage.srpc.server.constant.ClientConstant;
+import org.jiage.srpc.server.constant.ServerConstant;
 import org.jiage.srpc.server.constant.TransferConstant;
 import org.jiage.srpc.server.vo.ProtocolVO;
 import org.jiage.srpc.server.vo.TransferVO;
@@ -31,7 +33,7 @@ public class ClientTest {
             Bootstrap b = new Bootstrap();
             b.group(workerGroup);
             b.channel(NioSocketChannel.class);
-            b.option(ChannelOption.SO_KEEPALIVE, true);
+            b.option(ChannelOption.SO_KEEPALIVE, ClientConstant.SO_KEEPALIVE);
             b.handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel ch) throws Exception {
@@ -40,7 +42,8 @@ public class ClientTest {
             });
             // Start the client.
             ChannelFuture f = b.connect(host, port).sync();
-            //System.out.println("protocolClientHandler: "+protocolClientHandler.getProtocolVO());
+            // Send request
+            f.channel().writeAndFlush(new ProtocolVO("Hello world!".getBytes()));
             response = protocolClientHandler.poll();
             f.channel().closeFuture().sync();
         } finally {

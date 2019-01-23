@@ -1,23 +1,26 @@
-package org.jiage.srpc.server.netty;
+package org.jiage.srpc.server.service;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.jiage.srpc.api.message.constant.ServerConst;
-import org.jiage.srpc.api.message.constant.TransferConst;
+import org.jiage.srpc.api.message.service.Transfer;
+import org.jiage.srpc.api.message.vo.ProtocolVO;
 import org.jiage.srpc.api.message.vo.TransferVO;
+import org.jiage.srpc.server.coder.ProtocolDecoder;
+import org.jiage.srpc.server.coder.ProtocolEncoder;
+import org.jiage.srpc.server.handler.ServerProtocolHandler;
 
-public class ServerTest {
+public class ServerTransfer implements Transfer {
 
-    public static void main(String[] args) throws Exception {
-
-        new ServerTest().transfer(new TransferVO(TransferConst.PORT));
-    }
-
-    public void transfer(TransferVO transferVO) throws Exception {
-        final int port = transferVO.getPort();
+    @Override
+    public ProtocolVO transfer(TransferVO transfer) throws Exception {
+        final int port = transfer.getPort();
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -27,7 +30,7 @@ public class ServerTest {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new ProtocolEncoder(),new ProtocolDecoder(),new ProtocolServerHandlerTest());
+                            ch.pipeline().addLast(new ProtocolEncoder(),new ProtocolDecoder(),new ServerProtocolHandler());
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, ServerConst.SO_BACKLOG)
@@ -39,7 +42,11 @@ public class ServerTest {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
+        return null;
     }
 
-
+    @Override
+    public void transferImmediate(TransferVO transfer) throws Exception {
+        this.transfer(transfer);
+    }
 }

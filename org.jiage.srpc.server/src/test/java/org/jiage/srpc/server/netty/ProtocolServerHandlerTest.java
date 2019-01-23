@@ -1,10 +1,8 @@
 package org.jiage.srpc.server.netty;
 
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import org.jiage.srpc.server.vo.ProtocolVO;
+import org.jiage.srpc.api.message.vo.ProtocolVO;
 
 public class ProtocolServerHandlerTest extends ChannelInboundHandlerAdapter { // (1)
 

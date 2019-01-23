@@ -1,4 +1,4 @@
-package org.jiage.srpc.server.netty;
+package org.jiage.srpc.server.coder;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

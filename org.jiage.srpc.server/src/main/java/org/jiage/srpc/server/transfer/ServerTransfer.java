@@ -1,4 +1,4 @@
-package org.jiage.srpc.server.service;
+package org.jiage.srpc.server.transfer;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -9,7 +9,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.jiage.srpc.api.message.constant.ServerConst;
-import org.jiage.srpc.api.message.service.Transfer;
+import org.jiage.srpc.api.message.transfer.Transfer;
 import org.jiage.srpc.api.message.vo.ProtocolVO;
 import org.jiage.srpc.api.message.vo.TransferVO;
 import org.jiage.srpc.server.coder.ProtocolDecoder;
@@ -18,11 +18,12 @@ import org.jiage.srpc.server.handler.ServerProtocolHandler;
 
 public class ServerTransfer implements Transfer {
 
+    private EventLoopGroup bossGroup = new NioEventLoopGroup();
+    private EventLoopGroup workerGroup = new NioEventLoopGroup();
+
     @Override
     public ProtocolVO transfer(TransferVO transfer) throws Exception {
         final int port = transfer.getPort();
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
@@ -48,5 +49,16 @@ public class ServerTransfer implements Transfer {
     @Override
     public void transferImmediate(TransferVO transfer) throws Exception {
         this.transfer(transfer);
+    }
+
+    @Override
+    public void disconnect() {
+        try{
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }catch(Exception e){
+            /*do nothing*/
+        }
+
     }
 }

@@ -1,4 +1,4 @@
-package org.jiage.srpc.server.service;
+package org.jiage.srpc.server.transfer;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -9,7 +9,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.jiage.srpc.api.message.constant.ClientConst;
-import org.jiage.srpc.api.message.service.Transfer;
+import org.jiage.srpc.api.message.transfer.Transfer;
 import org.jiage.srpc.api.message.vo.ProtocolVO;
 import org.jiage.srpc.api.message.vo.TransferVO;
 import org.jiage.srpc.server.coder.ProtocolDecoder;
@@ -18,11 +18,12 @@ import org.jiage.srpc.server.handler.ClientProtocolHandler;
 
 public class ClientTransfer implements Transfer {
 
+    private EventLoopGroup workerGroup = new NioEventLoopGroup();
+
     @Override
     public ProtocolVO transfer(TransferVO transfer) throws Exception {
         final String host = transfer.getHost();
         final int port = transfer.getPort();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
         ProtocolVO protocol = null;
         try {
             final ClientProtocolHandler clientHandler = new ClientProtocolHandler();
@@ -51,5 +52,14 @@ public class ClientTransfer implements Transfer {
     @Override
     public void transferImmediate(TransferVO transfer) throws Exception {
         this.transfer(transfer);
+    }
+
+    @Override
+    public void disconnect() {
+        try{
+            workerGroup.shutdownGracefully();
+        }catch(Exception e){
+            /*do nothing*/
+        }
     }
 }

@@ -20,8 +20,12 @@ public class ThreadMultipleTest  {
 
     public static void main(String args[]) throws Exception{
         ThreadMultipleTest test = new ThreadMultipleTest();
-        test.updateUserStatsAsynchronous(new ArrayList<String>(Arrays.asList("1","2","3","4")),1);
-        test.updateUserStats(new ArrayList<String>(Arrays.asList("1","2","3","4")),1);
+        //test.updateUserStatsAsynchronous(new ArrayList<String>(Arrays.asList("1","2","3","4")),1);
+        //test.updateUserStats(new ArrayList<String>(Arrays.asList("1","2","3","4")),1);
+        CompletableFuture future1 =  CompletableFuture.supplyAsync(()-> new ThreadMultipleTest().
+                getErrorTest(new ArrayList<Integer>(Arrays.asList(1,2,3,4))),executor);
+        System.out.println((Integer)future1.get());
+
     }
 
     public void updateUserStats(List<String> users, int requesterId) throws Exception {
@@ -58,8 +62,15 @@ public class ThreadMultipleTest  {
         CompletableFuture future8 =  CompletableFuture.supplyAsync(()->process.getReplayCounts(userIds),executor);
         CompletableFuture futrues= CompletableFuture.allOf(future1,future2,future3,future4,future5,future6,future7,future8);
         futrues.get();
+        System.out.println(future1.get());
         System.out.println("all processes tasks finished thread id: "+Thread.currentThread().getId());
         System.out.println("Spend all processes times: "+(System.currentTimeMillis() - processTimes));
+    }
+
+
+    public Integer getErrorTest(List<Integer> ids) {
+        System.out.println("getErrorTest thread id: "+Thread.currentThread().getId());
+        return null;
     }
 
     public Map<Integer, Integer> getFollowerCount(List<Integer> ids) {

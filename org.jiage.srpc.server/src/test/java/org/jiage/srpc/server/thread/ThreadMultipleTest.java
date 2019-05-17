@@ -1,5 +1,7 @@
 package org.jiage.srpc.server.thread;
 
+import org.junit.Test;
+
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -8,7 +10,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
 
 public class ThreadMultipleTest  {
-    public final static Executor executor = Executors.newFixedThreadPool(Math.min(Runtime.getRuntime().availableProcessors(), 100),
+    public final static Executor executor = Executors.newFixedThreadPool(2,
             new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
@@ -18,15 +20,52 @@ public class ThreadMultipleTest  {
                 }
             });
 
-    public static void main(String args[]) throws Exception{
-        ThreadMultipleTest test = new ThreadMultipleTest();
-        //test.updateUserStatsAsynchronous(new ArrayList<String>(Arrays.asList("1","2","3","4")),1);
-        //test.updateUserStats(new ArrayList<String>(Arrays.asList("1","2","3","4")),1);
-        CompletableFuture future1 =  CompletableFuture.supplyAsync(()-> new ThreadMultipleTest().
-                getErrorTest(new ArrayList<Integer>(Arrays.asList(1,2,3,4))),executor);
-        System.out.println((Integer)future1.get());
 
+    @Test
+    public void test2(){
+        System.out.println(Math.min(Runtime.getRuntime().availableProcessors(), 10));
     }
+
+
+    @Test
+    public void multipleTest3() throws Exception{
+        ThreadMultipleTest test = new ThreadMultipleTest();
+        long processTimes = System.currentTimeMillis();
+        //for(int i=0; i<10; i++){
+        test.updateUserStats(new ArrayList<String>(Arrays.asList("1","2","3","4")),1);
+        //}
+        System.out.println("Spend all processes times: "+(System.currentTimeMillis() - processTimes));
+        //test.updateUserStats(new ArrayList<String>(Arrays.asList("1","2","3","4")),1);
+    }
+
+    @Test
+    public void multipleTest() throws Exception{
+        ThreadMultipleTest test = new ThreadMultipleTest();
+        long processTimes = System.currentTimeMillis();
+        //for(int i=0; i<10; i++){
+            test.updateUserStatsAsynchronous(new ArrayList<String>(Arrays.asList("1","2","3","4")),1);
+        //}
+        System.out.println("Spend all processes times: "+(System.currentTimeMillis() - processTimes));
+        //test.updateUserStats(new ArrayList<String>(Arrays.asList("1","2","3","4")),1);
+    }
+
+    @Test
+    public void multipleTest2() throws Exception{
+        ThreadMultipleTest test = new ThreadMultipleTest();
+        long processTimes = System.currentTimeMillis();
+        List<String> users = new ArrayList<String>(Arrays.asList("1","2","3","4","5","6","7","8","9","10"));
+        users.stream().parallel().forEach(id->{
+            try {
+                test.updateUserStatsAsynchronous(new ArrayList<String>(Arrays.asList(id)), 1);
+            }catch (Exception e){
+                /* do nothing */
+            }
+        });
+        System.out.println("Spend all processes times: "+(System.currentTimeMillis() - processTimes));
+        //test.updateUserStats(new ArrayList<String>(Arrays.asList("1","2","3","4")),1);
+    }
+
+
 
     public void updateUserStats(List<String> users, int requesterId) throws Exception {
         if(users == null || users.size() == 0) return ;
@@ -51,7 +90,7 @@ public class ThreadMultipleTest  {
         final List<Integer> userIds = users.stream().map(Integer::getInteger).collect(Collectors.toList());
         ThreadMultipleTest process = new ThreadMultipleTest();
         long processTimes = System.currentTimeMillis();
-        System.out.println("start process tasks thread id: "+Thread.currentThread().getId());
+        System.out.println("start process tasks thread id: "+Thread.currentThread().getId()+"-"+users);
         CompletableFuture future1 =  CompletableFuture.supplyAsync(()->process.getFollowerCount(userIds),executor);
         CompletableFuture future2 =  CompletableFuture.supplyAsync(()->process.getFollowingCount(userIds),executor);
         CompletableFuture future3 =  CompletableFuture.supplyAsync(()->process.getFriendCount(userIds),executor);

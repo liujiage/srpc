@@ -12,3 +12,6 @@ insert into temp_club(id,type) values
                     (4001280,'chatting'),
                     (2273340,'chatting'),
                     (3799414,'chatting')
+
+
+

@@ -1,0 +1,25 @@
+
+
+cash out - diamond
+select * from diamond_adjust where user_id = 634528 order by create_time desc
+
+cash out log
+select * from diamond_transfer_log  where user_id = 634528 order by create_time desc
+
+
+
+language: 'en',
+amount: '10.00',
+currency: 'USD',
+session_id: '308152cd-29a8-4f9c-9b81-3319133a2e82',
+txt1: 'Default',
+txt2: '',
+txt3: '',
+txt4: '',
+txt5: '',
+token: '75b3afe4be515d49fb2f9b1627d3a90a',
+trn_id: '4208020',
+verificationString: '0822e97f97e27d35cf8ba745b1da65da1166f97e',
+trnDate: '2019-09-27 03:57',
+servicesName: '',
+netAmount: '9.3'

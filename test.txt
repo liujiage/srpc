@@ -23,3 +23,339 @@ verificationString: '0822e97f97e27d35cf8ba745b1da65da1166f97e',
 trnDate: '2019-09-27 03:57',
 servicesName: '',
 netAmount: '9.3'
+
+
+
+
+
+package com.loops.message.business.giftmsg.service;
+
+import com.loops.commons.enums.BackpackAdjustType;
+import com.loops.commons.event.pojo.RoomUser;
+import com.loops.commons.util.IdGenerator;
+import com.loops.message.business.di.DIService;
+import com.loops.message.business.gift.repository.mybatis.GiftItemRepository;
+import com.loops.message.business.giftmsg.repository.ComboCounter;
+import com.loops.message.business.mq.MqEventProcessor;
+import com.loops.message.business.mq.Notifier;
+import com.loops.message.configuration.ConfigParams;
+import com.loops.message.dep.ProfileDep;
+import com.loops.message.dep.TradeDep;
+import com.loops.message.dep.TreasureDep;
+import com.loops.message.domain.SendGiftWayType;
+import com.loops.message.entity.GiftMsgInfo;
+import com.loops.message.message.chat.*;
+import com.loops.message.utils.DocumentHelper;
+import com.loops.premium.api.ClubService;
+import com.loops.premium.entity.ClubPrivSupType;
+import com.loops.premium.message.club.ClubTryUsePrivilegeResp;
+import com.loops.trade.entity.WalletBalance;
+import com.loops.trade.exception.trade.CoinBalanceNotEnoughException;
+import com.loops.trade.exception.trade.GiftItemNotValidException;
+import com.loops.trade.message.backpack.ConsumeBackpackReq;
+import com.loops.trade.message.backpack.ConsumeBackpackResp;
+import com.loops.trade.message.trade.PkSendGiftReq;
+import com.loops.trade.message.trade.SendGiftReq;
+import com.loops.trade.message.trade.SendGiftResp;
+import com.loops.treasure.exception.BackpackIsExpireException;
+import com.loops.treasure.exception.BackpackNotBelongToUserException;
+import com.loops.treasure.exception.BackpackNotEnoughException;
+import com.loops.treasure.exception.BackpackNotExistException;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import javax.inject.Inject;
+
+import java.util.List;
+
+import static com.loops.message.utils.AccountUtil.toRoomUser;
+
+
+@Service
+public class GiftMsgServiceImpl implements GiftMsgService {
+    private final static Logger log = LoggerFactory.getLogger(GiftMsgServiceImpl.class);
+    @Inject
+    private ConfigParams configParams;
+    @Inject
+    private DIService diService;
+    @Inject
+    private Notifier rsManager;
+    @Inject
+    private TradeDep tradeDep;
+    @Inject
+    private ProfileDep profileDep;
+    @Inject
+    private MqEventProcessor mqEventProcessor;
+    @Inject
+    private ComboCounter comboCounter;
+    @Inject
+    private TreasureDep treasureDep;
+    @Inject
+<<<<<<< HEAD
+	private ClubService clubService;
+    @Inject
+    private DocumentHelper documentHelper;
+    @Inject
+    private GiftItemRepository giftItemRepository;
+=======
+    private ClubService clubService;
+>>>>>>> master
+
+    @Override
+    public SendBackpackItemMsgResp sendBackpackMsg(SendBackpackItemMsgReq req) {
+
+        String sessionId = req.getSessionMsgInfo().getSessionId();
+        int senderId = req.getSessionMsgInfo().getUid();
+        int hostId = req.getSessionMsgInfo().getHostId();
+        long msgId = req.getSessionMsgInfo().getMsgId();
+        String comboId = req.getComboId();
+        String objectId = req.getObjectId();
+        int itemId = req.getItemId();
+        int itemAmount = req.getAmount() <= 0 ? 1 : req.getAmount();
+
+        long sequence = IdGenerator.genNextId(configParams.MACHINE_ID, IdGenerator.UsageNames.MessageSeq);
+
+        ConsumeBackpackReq consumeBackpackReq = ConsumeBackpackReq.builder()
+                .backpackId(itemId).adjustType(BackpackAdjustType.SESSION_DONATE).hostId(hostId).num(itemAmount).sessionId(sessionId).userId(senderId).build();
+
+        try {
+            ConsumeBackpackResp consumeBackpackResp = tradeDep.consumeBackpack(consumeBackpackReq);
+            if (consumeBackpackResp.getSuccess()) {
+                // calculate combo count
+                int comboCount;
+                if (!StringUtils.isBlank(comboId)) {
+                    comboCount = comboCounter.getComboCount(senderId, sessionId, comboId);
+                } else {
+                    comboCount = 0;
+                }
+
+                int coins = consumeBackpackResp.getCoins();
+
+                if (coins > 0) {
+                    boolean success = treasureDep.simpleUpdateTopfans(sessionId, senderId, coins);
+                    if (success) { // no exception on update topfans
+                        rsManager.notifyTopFansChanged(sessionId, hostId);
+                    }
+                }
+
+                RoomUser roomUser = toRoomUser(profileDep.getProfileWithErrorResilience(senderId), null);
+                roomUser.setName(roomUser.getName().replaceAll("జ్ఞ\u200Cా", "*"));
+
+                mqEventProcessor.sendBackpackIemMsgToMQ(sessionId, hostId, senderId, sequence, itemId, itemAmount, objectId, comboId, comboCount, roomUser);
+                if (!StringUtils.isBlank(comboId)) {
+                    diService.onSendBackpackItemCombo(senderId, hostId, sessionId, itemId, itemAmount, comboId, msgId);
+                } else {
+                    diService.onSendBackpackItem(senderId, hostId, sessionId, itemId, itemAmount, msgId);
+                }
+
+                return SendBackpackItemMsgResp.builder().seq(sequence).balance(consumeBackpackResp.getNum()).status(SendBackpackItemMsgResp.Status.OK).build();
+            } else {
+                log.warn("[GiftMsgServiceImpl] Fail to send backpack item [{}] from userId [{}], warning message is : {}", itemId, senderId, consumeBackpackResp.getMessage());
+                return SendBackpackItemMsgResp.builder().status(SendBackpackItemMsgResp.Status.UNKNOWN).build();
+            }
+        } catch (BackpackNotBelongToUserException | BackpackNotExistException e) {
+            return SendBackpackItemMsgResp.builder().status(SendBackpackItemMsgResp.Status.ITEM_NOT_VALID).build();
+
+        } catch (BackpackIsExpireException e) {
+            return SendBackpackItemMsgResp.builder().status(SendBackpackItemMsgResp.Status.EXPIRED).build();
+
+        } catch (BackpackNotEnoughException e) {
+            return SendBackpackItemMsgResp.builder().status(SendBackpackItemMsgResp.Status.BALANCE_NOT_ENOUGH).build();
+
+        } catch (Exception e) {
+            log.error("[GiftMsgServiceImpl] Fail to send backpack item [{}] from userId [{}]:", itemId, senderId, e);
+            throw new RuntimeException(e);
+        }
+
+
+    }
+
+    @Override
+    public SendPKVoteMsgResp sendPKVoteMsg(SendPKVoteMsgReq req) {
+        int senderId = req.getSessionMsgInfo().getUid();
+        int hostId = req.getSessionMsgInfo().getHostId();
+        long msgId = req.getSessionMsgInfo().getMsgId();
+        String sessionId = req.getSessionMsgInfo().getSessionId();
+        String itemId = req.getGiftId();
+        String comboId = req.getComboId();
+        int itemAmount = req.getGiftAmount();
+
+        long sequence = IdGenerator.genNextId(configParams.MACHINE_ID, IdGenerator.UsageNames.MessageSeq);
+
+        SendGiftResp sendGiftResp;
+        try {
+            PkSendGiftReq pkSendGiftReq = new PkSendGiftReq(req.getPkId(), req.getPkVersion());
+            pkSendGiftReq.setSessionId(sessionId);
+            pkSendGiftReq.setItemAmount(itemAmount);
+            pkSendGiftReq.setItemId(itemId);
+            pkSendGiftReq.setReceiverId(hostId);
+            pkSendGiftReq.setSenderId(senderId);
+            sendGiftResp = tradeDep.sendPKVote(pkSendGiftReq);
+        } catch (CoinBalanceNotEnoughException e) {
+            log.info("[sendPKVoteMsg] coin balance not enough to send gift for userId[{}] sending pk giftId [{}] in session [{}]", req.getSessionMsgInfo().getUid(), req.getGiftId(), req.getSessionMsgInfo().getSessionId());
+            return SendPKVoteMsgResp.builder().status(SendPKVoteMsgResp.Status.COIN_BALANCE_NOT_ENOUGH).build();
+        } catch (GiftItemNotValidException e) {
+            log.info("[sendPKVoteMsg] gift item not valid for userId[{}] sending pk giftId [{}] in session [{}]", req.getSessionMsgInfo().getUid(), req.getGiftId(), req.getSessionMsgInfo().getSessionId());
+            return SendPKVoteMsgResp.builder().status(SendPKVoteMsgResp.Status.ITEM_NOT_VALID).build();
+        } catch (Exception e) {
+            log.error("[sendPKVoteMsg] Fail:", e);
+            throw new RuntimeException(e);
+        }
+
+        int senderCoinBalance = sendGiftResp.getSenderBalance().getCoins();
+        int coinsDeducted = sendGiftResp.getCoinsDeducted();
+        int giftVersion = sendGiftResp.getGiftVersion();
+
+        boolean success = treasureDep.simpleUpdateTopfans(sessionId, senderId, coinsDeducted);
+        if (success) { // no exception on update topfans
+            rsManager.notifyTopFansChanged(sessionId, hostId);
+        }
+
+        // calculate combo count
+        int comboCount;
+        if (!StringUtils.isBlank(comboId)) {
+            comboCount = comboCounter.getComboCount(senderId, sessionId, comboId);
+        } else {
+            comboCount = 0;
+        }
+
+        RoomUser roomUser = toRoomUser(profileDep.getProfileWithErrorResilience(senderId), null);
+
+        roomUser.setName(roomUser.getName().replaceAll("జ్ఞ\u200Cా", "*"));
+
+        mqEventProcessor.sendGiftMsgToMQ(sessionId, hostId, senderId, sequence, itemId,
+                itemAmount, comboId, comboCount, giftVersion, roomUser);
+        if (!StringUtils.isBlank(comboId)) {
+            diService.onSendComboGift(senderId, hostId, sessionId, itemId, itemAmount, comboId, msgId);
+        } else {
+            diService.onSendGift(senderId, hostId, sessionId, itemId, itemAmount, msgId);
+        }
+
+        GiftMsgInfo giftMsgInfo = GiftMsgInfo.builder().giftItemAmount(itemAmount).giftVersion(giftVersion).comboCount(comboCount).comboId(comboId).seqId(sequence).sessionId(sessionId).build();
+        return SendPKVoteMsgResp.builder().seq(sequence).coinBalance(senderCoinBalance).giftMsgInfo(giftMsgInfo).status(SendPKVoteMsgResp.Status.OK).build();
+    }
+
+    @Override
+    public SendGiftMsgResp sendGiftMsg(SendGiftMsgReq req) {
+
+        log.info("debug sendGiftMsg uid {} hostId {} giftId {} giftAmount {} sessionId {} sendWayType {} receiverType {}",
+                req.getUid(),req.getHostId(),req.getGiftId(),req.getGiftAmount(),
+                req.getSessionId(),req.getSendWayType(),req.getReceiverType());
+        int senderId = req.getSessionMsgInfo().getUid();
+        int hostId = req.getSessionMsgInfo().getHostId();
+        long msgId = req.getSessionMsgInfo().getMsgId();
+        String sessionId = req.getSessionMsgInfo().getSessionId();
+        String itemId = req.getGiftId();
+        String comboId = req.getComboId();
+        int itemAmount = req.getGiftAmount();
+        int itemShouldPay = itemAmount;
+        //add send way type for v4.2.4
+        int sendWayType = req.getSendWayType();
+        int receiverType = req.getReceiverType();
+
+        long sequence = IdGenerator.genNextId(configParams.MACHINE_ID, IdGenerator.UsageNames.MessageSeq);
+
+        SendGiftResp sendGiftResp = null;
+        // club member have 5 free club gift each day
+        if (itemId.equals("club-gift")) {
+            ClubTryUsePrivilegeResp clubPrivilegeResp = clubService.tryUseClubPriv(
+                    req.getUserContext().getZone(), senderId, hostId, ClubPrivSupType.FreeGift, itemAmount);
+            if (clubPrivilegeResp.getStatus() == ClubTryUsePrivilegeResp.SUCCESS) {
+                sendGiftResp = new SendGiftResp();
+                sendGiftResp.setSenderBalance(new WalletBalance(senderId, treasureDep.getCoins(senderId)));
+                sendGiftResp.setCoinsDeducted(0);
+            } else if (clubPrivilegeResp.getStatus() == ClubTryUsePrivilegeResp.EXCEED) {
+                itemShouldPay = clubPrivilegeResp.getExceedTime();
+            } else {
+                // default send gift
+            }
+        }
+
+        if (sendGiftResp == null) {
+            try {
+                //add send private gift
+                sendGiftResp = tradeDep.sendGift(new SendGiftReq(senderId, hostId, itemId,
+                        sessionId, itemShouldPay,sendWayType,receiverType));
+            } catch (CoinBalanceNotEnoughException e) {
+                log.info("[sendGiftMsg] coin balance not enough to send gift for userId[{}] sending giftId [{}] in session [{}]", req.getSessionMsgInfo().getUid(), req.getGiftId(), req.getSessionMsgInfo().getSessionId());
+                return SendGiftMsgResp.builder().status(SendGiftMsgResp.Status.COIN_BALANCE_NOT_ENOUGH).build();
+            } catch (GiftItemNotValidException e) {
+                log.info("[sendGiftMsg] gift item not valid for userId[{}] sending giftId [{}] in session [{}]", req.getSessionMsgInfo().getUid(), req.getGiftId(), req.getSessionMsgInfo().getSessionId());
+                return SendGiftMsgResp.builder().status(SendGiftMsgResp.Status.ITEM_NOT_VALID).build();
+            } catch (Exception e) {
+                log.error("[sendGiftMsg] Fail:", e);
+                throw new RuntimeException(e);
+            }
+        }
+
+        int senderCoinBalance = sendGiftResp.getSenderBalance().getCoins();
+        int coinsDeducted = sendGiftResp.getCoinsDeducted();
+        int giftVersion = sendGiftResp.getGiftVersion();
+
+        //if send gift way is private not display anything
+        switch (sendWayType) {
+            case SendGiftWayType.IN_ROOM_PRIVATE:
+                /* do not thing private not to update top fans*/
+                break;
+            default:
+                if (coinsDeducted > 0) {
+                    boolean success = treasureDep.simpleUpdateTopfans(sessionId, senderId, coinsDeducted);
+                    if (success) { // no exception on update topfans
+                        rsManager.notifyTopFansChanged(sessionId, hostId);
+                    }
+                }
+        }
+
+
+        // calculate combo count
+        int comboCount;
+        if (!StringUtils.isBlank(comboId)) {
+            comboCount = comboCounter.getComboCount(senderId, sessionId, comboId);
+        } else {
+            comboCount = 0;
+        }
+
+        RoomUser roomUser = toRoomUser(profileDep.getProfileWithErrorResilience(senderId), req.getBadges());
+        roomUser.setName(roomUser.getName().replaceAll("జ్ఞ\u200Cా", "*"));
+
+        // send event to receiver in room to display gift add send private gift way for v4.2.4
+        mqEventProcessor.sendGiftMsgToMQ(sessionId, hostId, senderId, sequence, itemId,
+                itemAmount, comboId, comboCount, giftVersion, roomUser,sendWayType);
+
+        //Todo no private send gift record
+        if (!StringUtils.isBlank(comboId)) {
+            diService.onSendComboGift(senderId, hostId, sessionId, itemId, itemAmount, comboId, msgId);
+        } else {
+            diService.onSendGift(senderId, hostId, sessionId, itemId, itemAmount, msgId);
+        }
+        pushWSOnClubMemberSendBigGift(senderId, hostId, sessionId, sequence, itemId, roomUser);
+        return SendGiftMsgResp.builder().seq(sequence).coinBalance(senderCoinBalance).status(SendGiftMsgResp.Status.OK).build();
+    }
+
+    private void pushWSOnClubMemberSendBigGift(int senderId, int hostId, String sessionId, long sequence, String itemId, RoomUser roomUser) {
+        Boolean isBig = checkBigGift(itemId);
+        if (!isBig)
+            return;
+
+        Boolean isMember = clubService.isMemberOfClub(senderId, hostId);
+        if (!isMember)
+            return;
+        mqEventProcessor.sendClubMemberGetDoubleExpMsgToMQ(senderId, hostId, sessionId, sequence, itemId, roomUser);
+    }
+
+    private boolean checkBigGift(String itemId) {
+        List<String> bigGiftIds = giftItemRepository.getAllActiveBigGiftIds();
+        return bigGiftIds.contains(itemId);
+    }
+
+    @Override
+    public void notifySessionIncomeChanged(NotifySessionIncomeChangedReq req) {
+        boolean success = treasureDep.simpleUpdateTopfans(req.getSessionId(), req.getUserId(), req.getCoinsCost());
+        if (success) { // no exception on update topfans
+            rsManager.notifyTopFansChanged(req.getSessionId(), req.getHostId());
+        }
+    }
+
+}

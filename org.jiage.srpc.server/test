@@ -1,0 +1,18 @@
+
+
+
+
+select * from treasure_adjust order by id  desc  limit 10
+
+
+select * from bid_recordV2 where
+
+
+
+SELECT user_id,adjust_typy,gift_id,gift_num,gift_total_coins,remark FROM `treasure_adjust` where user_id = 1932866 order by create_time desc
+
+
+SELECT * FROM `gift_item` where gift_id = 'CastleElite'
+
+
+1568506

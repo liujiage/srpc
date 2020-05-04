@@ -16,6 +16,11 @@
             <artifactId>org.jiage.srpc.api</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>paypal.payflow</groupId>
+            <artifactId>payflow-sdk</artifactId>
+            <version>${payflow.version}</version>
+         </dependency>
     </dependencies>
 
 

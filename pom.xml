@@ -19,6 +19,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <netty.version>4.1.32.Final</netty.version>
         <msgpack.version>0.6.12</msgpack.version>
+        <payflow.version>4.46</payflow.version>
     </properties>
 
     <dependencies>
@@ -36,6 +37,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>paypal.payflow</groupId>
+            <artifactId>payflow-sdk</artifactId>
+            <version>${payflow.version}</version>
         </dependency>
     </dependencies>
 

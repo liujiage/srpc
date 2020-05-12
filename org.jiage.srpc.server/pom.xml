@@ -21,6 +21,11 @@
             <artifactId>payflow-sdk</artifactId>
             <version>${payflow.version}</version>
          </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${goson.version}</version>
+        </dependency>
     </dependencies>
 
 

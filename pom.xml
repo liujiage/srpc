@@ -20,6 +20,7 @@
         <netty.version>4.1.32.Final</netty.version>
         <msgpack.version>0.6.12</msgpack.version>
         <payflow.version>4.46</payflow.version>
+        <goson.version>2.8.6</goson.version>
     </properties>
 
     <dependencies>
@@ -42,6 +43,12 @@
             <groupId>paypal.payflow</groupId>
             <artifactId>payflow-sdk</artifactId>
             <version>${payflow.version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${goson.version}</version>
         </dependency>
     </dependencies>
 

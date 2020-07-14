@@ -16,15 +16,34 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class ProducerTest {
 
     @Autowired
-    private MessageTest messageTest;
+    private SendTest sendTest;
 
+    @Value("${test.transaction.routing:}")
+    private String RABBIT_ROUTING;
     @Value("${rabbitmq.exchange:}")
     private String RABBITMQ_EXCHANGE;
+    @Value("${rabbitmq.queue:}")
+    private String RABBITMQ_QUEUE;
 
     @Test
     public void send(){
-        System.out.println(RABBITMQ_EXCHANGE);
-        System.out.println(messageTest);
+        MessageTest message = new MessageTest(1,1,1,"test");
+        sendTest.send(RABBITMQ_EXCHANGE,RABBIT_ROUTING,message);
+
+    }
+
+    @Test
+    public void sendTransaction(){
+        MessageTest message = new MessageTest(1,1,1,"test");
+        sendTest.sendTransaction(RABBITMQ_EXCHANGE,RABBIT_ROUTING,message);
+
+    }
+
+    @Test
+    public void received(){
+        MessageTest message = (MessageTest)sendTest.getRabbitTemplate().
+                receiveAndConvert(RABBITMQ_QUEUE);
+        System.out.println(message);
     }
 
 }

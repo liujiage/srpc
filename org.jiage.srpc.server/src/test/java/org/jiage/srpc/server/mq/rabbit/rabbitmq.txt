@@ -1,0 +1,10 @@
+1. the basic api
+com.rabbitmq.client
+Spring boot wrap tools api RabbitTemplate use basic api.
+
+eg:
+RabbitTemplate.convertAndSend
+use basic api Channel.basicPublish
+
+reference:
+https://www.docs4dev.com/docs/en/spring-amqp/2.1.2.RELEASE/reference/_reference.html#transactions

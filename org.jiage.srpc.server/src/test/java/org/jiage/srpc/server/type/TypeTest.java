@@ -24,6 +24,13 @@ public class TypeTest {
         System.out.println(t.v);
     }
 
+    @Test
+    public void doubleTest(){
+        double v =   Double.parseDouble("1.5");
+        int exp = 100;
+        System.out.println((int)(v * exp));
+    }
+
     public static void process(TypeTest s){
         s.v = "22222";
     }

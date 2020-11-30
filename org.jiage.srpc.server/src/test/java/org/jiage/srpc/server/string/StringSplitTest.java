@@ -15,4 +15,11 @@ public class StringSplitTest {
         }
         System.out.println(ss);
     }
+
+    @Test
+    public void test(){
+        String s = "svip1";
+        String temp = "svip";
+        System.out.println(s.startsWith(temp));
+    }
 }

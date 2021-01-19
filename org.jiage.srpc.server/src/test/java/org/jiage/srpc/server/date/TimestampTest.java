@@ -16,6 +16,7 @@ public class TimestampTest {
         Timestamp s2 = new Timestamp(System.currentTimeMillis());
         System.out.println(s2.getTime());
         System.out.println(s2.getTime() > s.getTime());
+        System.out.println("before: "+s.before(s) + " after: "+s2.after(s) );
     }
 
 

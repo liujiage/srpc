@@ -23,6 +23,7 @@
         <goson.version>2.8.6</goson.version>
         <jjwt.version>0.9.0</jjwt.version>
         <okhttp.version>3.10.0</okhttp.version>
+        <cloning.version>1.10.3</cloning.version>
     </properties>
 
     <dependencies>
@@ -35,6 +36,12 @@
             <groupId>org.msgpack</groupId>
             <artifactId>msgpack</artifactId>
             <version>${msgpack.version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/io.github.kostaskougios/cloning -->
+        <dependency>
+            <groupId>io.github.kostaskougios</groupId>
+            <artifactId>cloning</artifactId>
+            <version>${cloning.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

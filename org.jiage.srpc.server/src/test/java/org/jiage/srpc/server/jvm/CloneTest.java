@@ -57,6 +57,7 @@ public class CloneTest {
     public void test4() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         CloneObj2 cc = new CloneObj2();
         Class ac = cc.getClass();
+        //cc.getTest().getClass().getFields()[0].getByte(null);
 
         System.out.println(ac.getSuperclass());
         for(Method m : ac.getMethods()){
